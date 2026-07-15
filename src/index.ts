@@ -16,6 +16,7 @@ import {
   votBackendUrl,
   workerHost,
 } from "./config/config";
+import { getMatchedExtraServices } from "./config/extraSites";
 import { resolveBootstrapMode } from "./core/bootstrapPolicy";
 import { CacheManager, VOTSessionStorageCache } from "./core/cacheManager";
 import { findConnectedContainerBySelector } from "./core/containerResolution";
@@ -1602,7 +1603,7 @@ function logBootstrap(
 }
 
 function getServicesCached(): ServiceConf[] {
-  servicesCache ??= getService();
+  servicesCache ??= [...getService(), ...getMatchedExtraServices()];
   return servicesCache;
 }
 

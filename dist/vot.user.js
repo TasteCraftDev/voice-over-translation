@@ -24,6 +24,7 @@
 // @downloadURL    https://raw.githubusercontent.com/ilyhalight/voice-over-translation/master/dist/vot.user.js
 // @updateURL      https://raw.githubusercontent.com/ilyhalight/voice-over-translation/master/dist/vot.user.js
 // @match          *://*.youtube.com/*
+// @match          *://*.magenta.tv/streamen-tv/*
 // @match          *://*.youtube-nocookie.com/*
 // @match          *://*.youtubekids.com/*
 // @match          *://*.twitch.tv/*
@@ -257,7 +258,14 @@ var vot = (function(exports) {
 	var __getOwnPropNames = Object.getOwnPropertyNames;
 	var __getProtoOf = Object.getPrototypeOf;
 	var __hasOwnProp = Object.prototype.hasOwnProperty;
-	var __esmMin = (fn, res) => () => (fn && (res = fn(fn = 0)), res);
+	var __esmMin = (fn, res, err) => () => {
+		if (err) throw err[0];
+		try {
+			return fn && (res = fn(fn = 0)), res;
+		} catch (e) {
+			throw err = [e], e;
+		}
+	};
 	var __commonJSMin = (cb, mod) => () => (mod || (cb((mod = { exports: {} }).exports, mod), cb = null), mod.exports);
 	var __exportAll = (all, no_symbols) => {
 		let target = {};
@@ -289,13 +297,13 @@ var vot = (function(exports) {
 		"hostVOT": "vot.toil.cc/v1",
 		"hostWorker": "vot-worker.toil.cc",
 		"mediaProxy": "media-proxy.transly.eu.cc",
-		"userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 YaBrowser/26.4.1.1026 Yowser/2.5 Safari/537.36",
-		"componentVersion": "26.4.1.1026",
+		"userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 YaBrowser/26.6.0.0 Safari/537.36",
+		"componentVersion": "26.6.0.1831",
 		"hmac": "bt8xH3VOlb4mqf0nqAibnDOoiPlXsisf",
 		"defaultDuration": 310,
 		"minChunkSize": 5295308,
 		"loggerLevel": 1,
-		"version": "2.4.17"
+		"version": "2.4.18"
 	};
 	//#endregion
 	//#region node_modules/@bufbuild/protobuf/dist/esm/wire/varint.js
@@ -531,11 +539,14 @@ var vot = (function(exports) {
 	/**
 	* Int64Support for the current environment.
 	*/
-	var protoInt64 = /* @__PURE__ */ makeInt64Support();
+	var protoInt64 = /*@__PURE__*/ makeInt64Support();
 	function makeInt64Support() {
 		const dv = /* @__PURE__ */ new DataView(/* @__PURE__ */ new ArrayBuffer(8));
-		if (typeof BigInt === "function" && typeof dv.getBigInt64 === "function" && typeof dv.getBigUint64 === "function" && typeof dv.setBigInt64 === "function" && typeof dv.setBigUint64 === "function" && (typeof process != "object" || typeof process.env != "object" || process.env.BUF_BIGINT_DISABLE !== "1")) {
-			const MIN = BigInt("-9223372036854775808"), MAX = BigInt("9223372036854775807"), UMIN = BigInt("0"), UMAX = BigInt("18446744073709551615");
+		if (typeof BigInt === "function" && typeof dv.getBigInt64 === "function" && typeof dv.getBigUint64 === "function" && typeof dv.setBigInt64 === "function" && typeof dv.setBigUint64 === "function" && (!!globalThis.Deno || !!globalThis.Bun || typeof process != "object" || typeof process.env != "object" || process.env.BUF_BIGINT_DISABLE !== "1")) {
+			const MIN = BigInt("-9223372036854775808");
+			const MAX = BigInt("9223372036854775807");
+			const UMIN = BigInt("0");
+			const UMAX = BigInt("18446744073709551615");
 			return {
 				zero: BigInt(0),
 				supported: true,
@@ -619,17 +630,22 @@ var vot = (function(exports) {
 		if (globalThis[symbol] == void 0) {
 			const te = new globalThis.TextEncoder();
 			const td = new globalThis.TextDecoder();
+			let tdStrict;
 			globalThis[symbol] = {
 				encodeUtf8(text) {
 					return te.encode(text);
 				},
-				decodeUtf8(bytes) {
+				decodeUtf8(bytes, strict) {
+					if (strict) {
+						if (tdStrict === void 0) tdStrict = new globalThis.TextDecoder("utf-8", { fatal: true });
+						return tdStrict.decode(bytes);
+					}
 					return td.decode(bytes);
 				},
 				checkUtf8(text) {
 					try {
 						return true;
-					} catch (e) {
+					} catch (_) {
 						return false;
 					}
 				}
@@ -780,7 +796,7 @@ var vot = (function(exports) {
 			return this;
 		}
 		/**
-		* Write a `bool` value, a variant.
+		* Write a `bool` value, a varint.
 		*/
 		bool(value) {
 			this.buf.push(value ? 1 : 0);
@@ -806,7 +822,7 @@ var vot = (function(exports) {
 		*/
 		float(value) {
 			assertFloat32(value);
-			let chunk = new Uint8Array(4);
+			let chunk = /* @__PURE__ */ new Uint8Array(4);
 			new DataView(chunk.buffer).setFloat32(0, value, true);
 			return this.raw(chunk);
 		}
@@ -814,7 +830,7 @@ var vot = (function(exports) {
 		* Write a `double` value, a 64-bit floating point number.
 		*/
 		double(value) {
-			let chunk = new Uint8Array(8);
+			let chunk = /* @__PURE__ */ new Uint8Array(8);
 			new DataView(chunk.buffer).setFloat64(0, value, true);
 			return this.raw(chunk);
 		}
@@ -823,7 +839,7 @@ var vot = (function(exports) {
 		*/
 		fixed32(value) {
 			assertUInt32(value);
-			let chunk = new Uint8Array(4);
+			let chunk = /* @__PURE__ */ new Uint8Array(4);
 			new DataView(chunk.buffer).setUint32(0, value, true);
 			return this.raw(chunk);
 		}
@@ -832,7 +848,7 @@ var vot = (function(exports) {
 		*/
 		sfixed32(value) {
 			assertInt32(value);
-			let chunk = new Uint8Array(4);
+			let chunk = /* @__PURE__ */ new Uint8Array(4);
 			new DataView(chunk.buffer).setInt32(0, value, true);
 			return this.raw(chunk);
 		}
@@ -846,10 +862,10 @@ var vot = (function(exports) {
 			return this;
 		}
 		/**
-		* Write a `fixed64` value, a signed, fixed-length 64-bit integer.
+		* Write a `sfixed64` value, a signed, fixed-length 64-bit integer.
 		*/
 		sfixed64(value) {
-			let chunk = new Uint8Array(8), view = new DataView(chunk.buffer), tc = protoInt64.enc(value);
+			let chunk = /* @__PURE__ */ new Uint8Array(8), view = new DataView(chunk.buffer), tc = protoInt64.enc(value);
 			view.setInt32(0, tc.lo, true);
 			view.setInt32(4, tc.hi, true);
 			return this.raw(chunk);
@@ -858,7 +874,7 @@ var vot = (function(exports) {
 		* Write a `fixed64` value, an unsigned, fixed-length 64 bit integer.
 		*/
 		fixed64(value) {
-			let chunk = new Uint8Array(8), view = new DataView(chunk.buffer), tc = protoInt64.uEnc(value);
+			let chunk = /* @__PURE__ */ new Uint8Array(8), view = new DataView(chunk.buffer), tc = protoInt64.uEnc(value);
 			view.setInt32(0, tc.lo, true);
 			view.setInt32(4, tc.hi, true);
 			return this.raw(chunk);
@@ -875,7 +891,7 @@ var vot = (function(exports) {
 		* Write a `sint64` value, a signed, zig-zag-encoded 64-bit varint.
 		*/
 		sint64(value) {
-			let tc = protoInt64.enc(value), sign = tc.hi >> 31;
+			const tc = protoInt64.enc(value), sign = tc.hi >> 31;
 			varint64write(tc.lo << 1 ^ sign, (tc.hi << 1 | tc.lo >>> 31) ^ sign, this.buf);
 			return this;
 		}
@@ -883,7 +899,7 @@ var vot = (function(exports) {
 		* Write a `uint64` value, an unsigned 64-bit varint.
 		*/
 		uint64(value) {
-			let tc = protoInt64.uEnc(value);
+			const tc = protoInt64.uEnc(value);
 			varint64write(tc.lo, tc.hi, this.buf);
 			return this;
 		}
@@ -902,20 +918,28 @@ var vot = (function(exports) {
 			this.view = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
 		}
 		/**
-		* Reads a tag - field number and wire type.
+		* Reads a tag - field number and wire type. Tags are uint32 varints; values
+		* that do not fit in uint32 are rejected.
 		*/
 		tag() {
-			let tag = this.uint32(), fieldNo = tag >>> 3, wireType = tag & 7;
-			if (fieldNo <= 0 || wireType < 0 || wireType > 5) throw new Error("illegal tag: field no " + fieldNo + " wire type " + wireType);
+			const start = this.pos;
+			const tag = this.uint32();
+			const bytesRead = this.pos - start;
+			if (bytesRead > 5 || bytesRead == 5 && this.buf[this.pos - 1] > 15) throw new Error("illegal tag: varint overflows uint32");
+			const fieldNo = tag >>> 3;
+			const wireType = tag & 7;
+			if (fieldNo <= 0 || wireType > 5) throw new Error("illegal tag: field no " + fieldNo + " wire type " + wireType);
 			return [fieldNo, wireType];
 		}
 		/**
 		* Skip one element and return the skipped data.
 		*
 		* When skipping StartGroup, provide the tags field number to check for
-		* matching field number in the EndGroup tag.
+		* matching field number in the EndGroup tag. Recursion into nested groups
+		* is guarded by the `recursionLimit` argument: When the limit is reached,
+		* this method throws.
 		*/
-		skip(wireType, fieldNo) {
+		skip(wireType, fieldNo, recursionLimit = 100) {
 			let start = this.pos;
 			switch (wireType) {
 				case WireType.Varint:
@@ -930,13 +954,14 @@ var vot = (function(exports) {
 					this.pos += len;
 					break;
 				case WireType.StartGroup:
+					if (recursionLimit <= 0) throw new Error("maximum recursion depth reached");
 					for (;;) {
 						const [fn, wt] = this.tag();
 						if (wt === WireType.EndGroup) {
 							if (fieldNo !== void 0 && fn !== fieldNo) throw new Error("invalid end group tag");
 							break;
 						}
-						this.skip(wt, fn);
+						this.skip(wt, fn, recursionLimit - 1);
 					}
 					break;
 				default: throw new Error("cant skip wire type " + wireType);
@@ -1038,10 +1063,11 @@ var vot = (function(exports) {
 			return this.buf.subarray(start, start + len);
 		}
 		/**
-		* Read a `string` field, length-delimited data converted to UTF-8 text.
+		* Read a `string` field, length-delimited data converted to UTF-8 text. If
+		* `strict` is true, throw on invalid UTF-8 instead of substituting U+FFFD.
 		*/
-		string() {
-			return this.decodeUtf8(this.bytes());
+		string(strict) {
+			return this.decodeUtf8(this.bytes(), strict);
 		}
 	};
 	/**
@@ -1067,7 +1093,7 @@ var vot = (function(exports) {
 		if (typeof arg == "string") {
 			const o = arg;
 			arg = Number(arg);
-			if (isNaN(arg) && o !== "NaN") throw new Error("invalid float32: " + o);
+			if (Number.isNaN(arg) && o !== "NaN") throw new Error("invalid float32: " + o);
 		} else if (typeof arg != "number") throw new Error("invalid float32: " + typeof arg);
 		if (Number.isFinite(arg) && (arg > 34028234663852886e22 || arg < -34028234663852886e22)) throw new Error("invalid float32: " + arg);
 	}
@@ -1682,9 +1708,128 @@ var vot = (function(exports) {
 			return message;
 		}
 	};
+	function createBaseVideoLangCacheRequest() {
+		return {
+			url: "",
+			title: ""
+		};
+	}
+	var VideoLangCacheRequest = {
+		encode(message, writer = new BinaryWriter()) {
+			if (message.url !== "") writer.uint32(10).string(message.url);
+			if (message.title !== "") writer.uint32(18).string(message.title);
+			return writer;
+		},
+		decode(input, length) {
+			const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+			let end = length === void 0 ? reader.len : reader.pos + length;
+			const message = createBaseVideoLangCacheRequest();
+			while (reader.pos < end) {
+				const tag = reader.uint32();
+				switch (tag >>> 3) {
+					case 1:
+						if (tag !== 10) break;
+						message.url = reader.string();
+						continue;
+					case 2:
+						if (tag !== 18) break;
+						message.title = reader.string();
+						continue;
+				}
+				if ((tag & 7) === 4 || tag === 0) break;
+				reader.skip(tag & 7);
+			}
+			return message;
+		},
+		fromJSON(object) {
+			return {
+				url: isSet(object.url) ? globalThis.String(object.url) : "",
+				title: isSet(object.title) ? globalThis.String(object.title) : ""
+			};
+		},
+		toJSON(message) {
+			const obj = {};
+			if (message.url !== "") obj.url = message.url;
+			if (message.title !== "") obj.title = message.title;
+			return obj;
+		},
+		create(base) {
+			return VideoLangCacheRequest.fromPartial(base ?? {});
+		},
+		fromPartial(object) {
+			const message = createBaseVideoLangCacheRequest();
+			message.url = object.url ?? "";
+			message.title = object.title ?? "";
+			return message;
+		}
+	};
+	function createBaseVideoLangCacheResponse() {
+		return {
+			url: "",
+			status: 0,
+			unknown1: 0
+		};
+	}
+	var VideoLangCacheResponse = {
+		encode(message, writer = new BinaryWriter()) {
+			if (message.url !== "") writer.uint32(10).string(message.url);
+			if (message.status !== 0) writer.uint32(24).int32(message.status);
+			if (message.unknown1 !== 0) writer.uint32(40).int32(message.unknown1);
+			return writer;
+		},
+		decode(input, length) {
+			const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+			let end = length === void 0 ? reader.len : reader.pos + length;
+			const message = createBaseVideoLangCacheResponse();
+			while (reader.pos < end) {
+				const tag = reader.uint32();
+				switch (tag >>> 3) {
+					case 1:
+						if (tag !== 10) break;
+						message.url = reader.string();
+						continue;
+					case 3:
+						if (tag !== 24) break;
+						message.status = reader.int32();
+						continue;
+					case 5:
+						if (tag !== 40) break;
+						message.unknown1 = reader.int32();
+						continue;
+				}
+				if ((tag & 7) === 4 || tag === 0) break;
+				reader.skip(tag & 7);
+			}
+			return message;
+		},
+		fromJSON(object) {
+			return {
+				url: isSet(object.url) ? globalThis.String(object.url) : "",
+				status: isSet(object.status) ? globalThis.Number(object.status) : 0,
+				unknown1: isSet(object.unknown1) ? globalThis.Number(object.unknown1) : 0
+			};
+		},
+		toJSON(message) {
+			const obj = {};
+			if (message.url !== "") obj.url = message.url;
+			if (message.status !== 0) obj.status = Math.round(message.status);
+			if (message.unknown1 !== 0) obj.unknown1 = Math.round(message.unknown1);
+			return obj;
+		},
+		create(base) {
+			return VideoLangCacheResponse.fromPartial(base ?? {});
+		},
+		fromPartial(object) {
+			const message = createBaseVideoLangCacheResponse();
+			message.url = object.url ?? "";
+			message.status = object.status ?? 0;
+			message.unknown1 = object.unknown1 ?? 0;
+			return message;
+		}
+	};
 	function createBaseAudioBufferObject() {
 		return {
-			audioFile: new Uint8Array(0),
+			audioFile: /* @__PURE__ */ new Uint8Array(0),
 			fileId: ""
 		};
 	}
@@ -1717,7 +1862,7 @@ var vot = (function(exports) {
 		},
 		fromJSON(object) {
 			return {
-				audioFile: isSet(object.audioFile) ? bytesFromBase64(object.audioFile) : new Uint8Array(0),
+				audioFile: isSet(object.audioFile) ? bytesFromBase64(object.audioFile) : /* @__PURE__ */ new Uint8Array(0),
 				fileId: isSet(object.fileId) ? globalThis.String(object.fileId) : ""
 			};
 		},
@@ -1732,14 +1877,14 @@ var vot = (function(exports) {
 		},
 		fromPartial(object) {
 			const message = createBaseAudioBufferObject();
-			message.audioFile = object.audioFile ?? new Uint8Array(0);
+			message.audioFile = object.audioFile ?? /* @__PURE__ */ new Uint8Array(0);
 			message.fileId = object.fileId ?? "";
 			return message;
 		}
 	};
 	function createBasePartialAudioBufferObject() {
 		return {
-			audioFile: new Uint8Array(0),
+			audioFile: /* @__PURE__ */ new Uint8Array(0),
 			chunkId: 0
 		};
 	}
@@ -1772,7 +1917,7 @@ var vot = (function(exports) {
 		},
 		fromJSON(object) {
 			return {
-				audioFile: isSet(object.audioFile) ? bytesFromBase64(object.audioFile) : new Uint8Array(0),
+				audioFile: isSet(object.audioFile) ? bytesFromBase64(object.audioFile) : /* @__PURE__ */ new Uint8Array(0),
 				chunkId: isSet(object.chunkId) ? globalThis.Number(object.chunkId) : 0
 			};
 		},
@@ -1787,7 +1932,7 @@ var vot = (function(exports) {
 		},
 		fromPartial(object) {
 			const message = createBasePartialAudioBufferObject();
-			message.audioFile = object.audioFile ?? new Uint8Array(0);
+			message.audioFile = object.audioFile ?? /* @__PURE__ */ new Uint8Array(0);
 			message.chunkId = object.chunkId ?? 0;
 			return message;
 		}
@@ -2688,8 +2833,8 @@ var vot = (function(exports) {
 		}
 	}
 	var browserSecHeaders = {
-		"sec-ch-ua": `"Chromium";v="147", "YaBrowser";v="${componentVersion.slice(0, 5)}", "Not?A_Brand";v="26", "Yowser";v="2.5"`,
-		"sec-ch-ua-full-version-list": `"Chromium";v="147.0.7727.138", "YaBrowser";v="${componentVersion}", "Not?A_Brand";v="26.0.0.0", "Yowser";v="2.5"`,
+		"sec-ch-ua": `"Chromium";v="148", "YaBrowser";v="${componentVersion.slice(0, 5)}", "Not?A_Brand";v="99", "Yowser";v="2.5"`,
+		"sec-ch-ua-full-version-list": `"Chromium";v="148.0.7778.1831", "YaBrowser";v="${componentVersion}", "Not?A_Brand";v="99.0.0.0", "Yowser";v="2.5"`,
 		"Sec-Fetch-Mode": "no-cors"
 	};
 	//#endregion
@@ -2924,6 +3069,15 @@ var vot = (function(exports) {
 	function decodeStreamResponse(response) {
 		return StreamTranslationResponse.decode(new Uint8Array(response));
 	}
+	function encodeVideoLangCacheRequest(url, title) {
+		return VideoLangCacheRequest.encode({
+			url,
+			title
+		}).finish();
+	}
+	function decodeVideoLangCacheResponse(response) {
+		return VideoLangCacheResponse.decode(new Uint8Array(response));
+	}
 	var YandexVOTProtobuf = {
 		encodeTranslationRequest,
 		decodeTranslationResponse,
@@ -2936,7 +3090,9 @@ var vot = (function(exports) {
 		decodeSubtitlesResponse,
 		encodeStreamPingRequest,
 		encodeStreamRequest,
-		decodeStreamResponse
+		decodeStreamResponse,
+		encodeVideoLangCacheRequest,
+		decodeVideoLangCacheResponse
 	};
 	function encodeSessionRequest(uuid, module) {
 		return YandexSessionRequest.encode({
@@ -3048,6 +3204,7 @@ var vot = (function(exports) {
 		VideoService["bitview"] = "bitview";
 		VideoService["thisvid"] = "thisvid";
 		VideoService["ign"] = "ign";
+		VideoService["noodlemagazine"] = "noodlemagazine";
 		VideoService["zdf"] = "zdf";
 		VideoService["bunkr"] = "bunkr";
 		VideoService["imdb"] = "imdb";
@@ -3272,7 +3429,7 @@ var vot = (function(exports) {
 					if (url.startsWith("https://youtu.be/") && shouldSendFailedAudio) {
 						await this.requestVtransFailAudio(url);
 						await this.requestVtransAudio(url, translationData.translationId, {
-							audioFile: new Uint8Array(),
+							audioFile: /* @__PURE__ */ new Uint8Array(),
 							fileId: AudioDownloadType.WEB_API_GET_ALL_GENERATING_URLS_DATA_FROM_IFRAME
 						});
 						return await this.translateVideoYAImpl({
@@ -4132,7 +4289,8 @@ var vot = (function(exports) {
 			host: VideoService$1.jove,
 			url: "https://jove.com/",
 			match: /^(?:app|www)\.jove\.com$/,
-			selector: sharedSelectors.flowplayer
+			selector: sharedSelectors.flowplayer,
+			needExtraData: true
 		},
 		{
 			host: VideoService$1.linkedin,
@@ -4197,6 +4355,13 @@ var vot = (function(exports) {
 			host: VideoService$1.rtnews,
 			url: "https://www.rt.com/",
 			match: /^(www.)?rt.com$/,
+			selector: sharedSelectors.jwPlayer,
+			needExtraData: true
+		},
+		{
+			host: VideoService$1.noodlemagazine,
+			url: "https://hot.noodlemagazine.com/",
+			match: /^(hot\.)?noodlemagazine\.com$/,
 			selector: sharedSelectors.jwPlayer,
 			needExtraData: true
 		},
@@ -4483,15 +4648,17 @@ var vot = (function(exports) {
 	//#region node_modules/@vot.js/ext/dist/helpers/bilibili.js
 	var BilibiliHelper = class extends BaseHelper {
 		async getVideoId(url) {
-			const bangumiId = /bangumi\/play\/([^/]+)/.exec(url.pathname)?.[0];
-			if (bangumiId) return bangumiId;
+			const playId = /(?:bangumi|cheese)\/play\/[^/]+/.exec(url.pathname)?.[0];
+			if (playId) return playId;
 			const bvid = url.searchParams.get("bvid");
 			if (bvid) return `video/${bvid}`;
 			const intlId = /^\/(?:[a-z]{2}\/)?((?:play\/\d+(?:\/\d+)?|video\/\d+))\/?$/i.exec(url.pathname)?.[1];
 			if (intlId) return intlId;
-			let vid = /video\/([^/]+)/.exec(url.pathname)?.[0];
-			if (vid && url.searchParams.get("p") !== null) vid += `/?p=${url.searchParams.get("p")}`;
-			return vid;
+			const vid = /video\/[^/]+/.exec(url.pathname)?.[0];
+			if (vid) {
+				const p = url.searchParams.get("p");
+				return p !== null ? `${vid}/?p=${p}` : vid;
+			}
 		}
 	};
 	//#endregion
@@ -4696,7 +4863,7 @@ var vot = (function(exports) {
 		SUBTITLE_FORMAT = "vtt";
 		static getPlayer() {
 			const vjs = window.videojs;
-			const techEl = document.querySelector("video.vjs-tech[id], video[id$='_html5_api']");
+			const techEl = document.querySelector("video.vjs-tech, video[id$='_html5_api'], video");
 			const derivedPlayerId = techEl?.id?.endsWith("_html5_api") ? techEl.id.slice(0, -10) : void 0;
 			if (vjs?.getPlayer) {
 				if (derivedPlayerId) {
@@ -4719,7 +4886,7 @@ var vot = (function(exports) {
 		getVideoDataByPlayer(videoId) {
 			try {
 				const player = VideoJSHelper.getPlayer();
-				const techEl = document.querySelector("video.vjs-tech, video[id$='_html5_api'], video[src]");
+				const techEl = document.querySelector("video.vjs-tech, video[id$='_html5_api'], video[src], video");
 				if (!player && !techEl) throw new Error(`Video player/video element not found, videoId ${videoId}`);
 				const duration = player?.duration?.() ?? techEl?.duration;
 				let url;
@@ -4727,7 +4894,7 @@ var vot = (function(exports) {
 					const sources = typeof player.currentSources === "function" ? player.currentSources() : player.getCache?.()?.sources;
 					url = (Array.isArray(sources) ? sources.find((source) => source?.type === "video/mp4" || source?.type === "video/webm" || source?.src) : void 0)?.src;
 				}
-				url ??= techEl?.currentSrc || techEl?.src || techEl?.getAttribute?.("src") || void 0;
+				url ??= techEl?.currentSrc || techEl?.src || techEl?.querySelector("source")?.src || techEl?.getAttribute?.("src") || void 0;
 				if (!url) throw new Error(`Failed to find video url for videoID ${videoId}`);
 				return {
 					url,
@@ -4740,7 +4907,7 @@ var vot = (function(exports) {
 			}
 		}
 		getSubtitles() {
-			const techEl = document.querySelector("video.vjs-tech, video[id$='_html5_api'], video[src]");
+			const techEl = document.querySelector("video.vjs-tech, video[id$='_html5_api'], video[src], video");
 			return (techEl ? Array.from(techEl.querySelectorAll("track[src]")) : []).filter((t) => t.kind !== "metadata").flatMap((t) => {
 				const src = t.getAttribute("src");
 				if (!src) return [];
@@ -4759,13 +4926,27 @@ var vot = (function(exports) {
 	var CourseraHelper = class CourseraHelper extends VideoJSHelper {
 		API_ORIGIN = "https://www.coursera.org/api";
 		SUBTITLE_SOURCE = "coursera";
-		async getCourseData(courseId) {
+		async getCourseData(courseIdOrSlug) {
 			try {
-				return (await (await this.fetch(`${this.API_ORIGIN}/onDemandCourses.v1/${courseId}`)).json())?.elements?.[0];
+				const url = typeof courseIdOrSlug === "string" && courseIdOrSlug.includes("-") ? `${this.API_ORIGIN}/onDemandCourses.v1?q=slug&slug=${courseIdOrSlug}` : `${this.API_ORIGIN}/onDemandCourses.v1/${courseIdOrSlug}`;
+				return (await (await this.fetch(url)).json())?.elements?.[0];
 			} catch (err) {
-				Logger.error(`Failed to get course data by courseId: ${courseId}`, err.message);
+				Logger.error(`Failed to get course data: ${courseIdOrSlug}`, err.message);
 				return;
 			}
+		}
+		getCourseSlug() {
+			return (/learn\/([^/]+)\/lecture/.exec(window.location.pathname) ?? /lecture\/([^/]+)\//.exec(window.location.pathname))?.[1];
+		}
+		getCourseId() {
+			const player = CourseraHelper.getPlayer();
+			if (player?.options_?.courseId) return player.options_.courseId;
+			const courseraObj = window.coursera;
+			if (typeof courseraObj?.courseId === "string") return courseraObj.courseId;
+			else if (typeof courseraObj?.courseId === "function") try {
+				return courseraObj.courseId();
+			} catch {}
+			return window.App?.context?.dispatcher?.stores?.CourseStore?.courseId;
 		}
 		static getPlayer() {
 			return VideoJSHelper.getPlayer();
@@ -4773,21 +4954,19 @@ var vot = (function(exports) {
 		async getVideoData(videoId) {
 			const data = this.getVideoDataByPlayer(videoId);
 			if (!data) return;
-			const { options_: options } = CourseraHelper.getPlayer() ?? {};
-			if (!data.subtitles?.length && options) data.subtitles = options.tracks.map((track) => ({
+			const options = CourseraHelper.getPlayer()?.options_;
+			if (!data.subtitles?.length && options?.tracks) data.subtitles = options.tracks.map((track) => ({
 				url: track.src,
 				language: normalizeLang$1(track.srclang),
 				source: this.SUBTITLE_SOURCE,
 				format: this.SUBTITLE_FORMAT
 			}));
-			const courseId = options?.courseId;
-			if (!courseId) return data;
+			const courseIdOrSlug = options?.courseId ?? this.getCourseId() ?? this.getCourseSlug();
 			let courseLang = "en";
-			const courseData = await this.getCourseData(courseId);
-			if (courseData) {
-				const { primaryLanguageCodes: [primaryLangauge] } = courseData;
-				courseLang = primaryLangauge ? normalizeLang$1(primaryLangauge) : "en";
-			}
+			let courseData;
+			if (courseIdOrSlug) courseData = await this.getCourseData(courseIdOrSlug);
+			if (courseData?.primaryLanguageCodes?.[0]) courseLang = normalizeLang$1(courseData.primaryLanguageCodes[0]);
+			else courseLang = normalizeLang$1(document.documentElement.lang || "en");
 			if (!availableLangs.includes(courseLang)) courseLang = "en";
 			const subtitleUrl = (data.subtitles.find((subtitle) => subtitle.language === courseLang) ?? data.subtitles?.[0])?.url;
 			if (!subtitleUrl) Logger.warn("Failed to find any subtitle file");
@@ -4800,13 +4979,8 @@ var vot = (function(exports) {
 				targetUrl: url
 			}] : null;
 			return {
-				...subtitleUrl ? {
-					url: this.service?.url + videoId,
-					translationHelp
-				} : {
-					url,
-					translationHelp
-				},
+				url: subtitleUrl ? this.service?.url + videoId : url,
+				translationHelp,
 				detectedLanguage: courseLang,
 				duration
 			};
@@ -4851,20 +5025,44 @@ var vot = (function(exports) {
 	//#region node_modules/@vot.js/ext/dist/helpers/datacamp.js
 	var DataCampHelper = class extends VideoJSHelper {
 		SUBTITLE_SOURCE = "datacamp";
-		getVideoDataFromInput() {
+		getVideoUrlFromInput(input) {
 			try {
-				const input = document.querySelector("#slideDeckData") || document.getElementById("videoData");
-				if (!input || !(input instanceof HTMLInputElement) && !(input instanceof HTMLTextAreaElement) || !input.value) return null;
-				return JSON.parse(input.value);
-			} catch (err) {
-				Logger.error("Failed to parse DataCamp videoData input", err instanceof Error ? err.message : String(err));
+				if (!(input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement || input.tagName === "INPUT" || input.tagName === "TEXTAREA")) return null;
+				const value = input.value;
+				if (!value) return null;
+				const meta = JSON.parse(value);
+				const videoUrl = meta?.video_url ?? meta?.plain_video_mp4_link ?? meta?.plain_video_hls_link ?? meta?.video_mp4_link ?? meta?.video_hls_link;
+				return typeof videoUrl === "string" ? videoUrl : null;
+			} catch {
 				return null;
 			}
 		}
+		getVideoUrlFromDocument(doc = document) {
+			const videoDataInput = doc.querySelector("#videoData");
+			if (videoDataInput) {
+				const url = this.getVideoUrlFromInput(videoDataInput);
+				if (url) return url;
+			}
+			const slideDeckInput = doc.querySelector("#slideDeckData");
+			if (slideDeckInput) {
+				const url = this.getVideoUrlFromInput(slideDeckInput);
+				if (url) return url;
+			}
+			return null;
+		}
 		async getVideoData(videoId) {
-			if (!this.getVideoDataByPlayer(videoId)) return;
-			const meta = this.getVideoDataFromInput();
-			const videoUrl = meta?.video_url ?? meta?.plain_video_mp4_link ?? meta?.plain_video_hls_link ?? meta?.video_mp4_link ?? meta?.video_hls_link;
+			const cleanUrl = videoId.split("||")[0];
+			let videoUrl = this.getVideoUrlFromDocument(document);
+			if (!videoUrl) try {
+				const response = await fetch(cleanUrl);
+				if (response.ok) {
+					const html = await response.text();
+					const doc = new DOMParser().parseFromString(html, "text/html");
+					videoUrl = this.getVideoUrlFromDocument(doc);
+				}
+			} catch (err) {
+				Logger.error("Failed to fetch DataCamp page for DOMParser", err instanceof Error ? err.message : String(err));
+			}
 			if (!videoUrl) return;
 			return {
 				url: videoId,
@@ -5093,10 +5291,61 @@ var vot = (function(exports) {
 	//#region node_modules/@vot.js/ext/dist/helpers/jove.js
 	var JoveHelper = class extends BaseHelper {
 		async getVideoId(url) {
-			const groups = /^\/(?:[a-z]{2}\/)?v\/(?<id>\d+)\/(?<slug>[^/?#]+)\/?$/i.exec(url.pathname)?.groups;
-			if (!groups) return;
-			const { id, slug } = groups;
-			return `v/${id}/${slug}`;
+			const match = /^\/(?:[a-z]{2}\/)?v\/(\d+)\/([^/?#]+)/i.exec(url.pathname);
+			return match ? `v/${match[1]}/${match[2]}` : void 0;
+		}
+		async getVideoData(videoId) {
+			if (!videoId) return void 0;
+			let nextData;
+			if (typeof window !== "undefined" && typeof document !== "undefined") {
+				const nextDataEl = document.getElementById("__NEXT_DATA__");
+				if (nextDataEl?.textContent) try {
+					nextData = JSON.parse(nextDataEl.textContent);
+				} catch (err) {
+					throw new VideoHelperError(`Failed to parse DOM __NEXT_DATA__: ${err.message}`);
+				}
+			}
+			const queries = nextData?.props?.pageProps?.dehydratedState?.queries || [];
+			let extracted;
+			for (const q of queries) {
+				const data = q.state?.data;
+				if (!data) continue;
+				for (const target of [data.domain, data]) {
+					const videoObj = target?.videos?.en;
+					if (videoObj?.cdnFile) {
+						extracted = {
+							videoUrl: videoObj.cdnFile,
+							duration: videoObj.lengthSeconds ? parseInt(videoObj.lengthSeconds, 10) : void 0,
+							title: target.title,
+							description: target.titleDescription,
+							subtitles: videoObj.subtitles
+						};
+						break;
+					}
+				}
+				if (extracted) break;
+			}
+			if (!extracted?.videoUrl) throw new VideoHelperError(`Failed to retrieve video URL for ${videoId}`);
+			const { videoUrl, duration, title, description, subtitles: subtitlesObj } = extracted;
+			const subtitles = subtitlesObj ? Object.entries(subtitlesObj).filter(([, url]) => typeof url === "string").map(([lang, url]) => ({
+				language: normalizeLang$1(lang),
+				source: "jove",
+				format: "vtt",
+				url,
+				isAutoGenerated: false
+			})) : [];
+			return {
+				url: `https://www.jove.com/${videoId}`,
+				video_url: videoUrl,
+				title,
+				description,
+				duration,
+				subtitles,
+				translationHelp: [{
+					target: "video_file_url",
+					targetUrl: videoUrl
+				}]
+			};
 		}
 	};
 	//#endregion
@@ -5442,6 +5691,131 @@ var vot = (function(exports) {
 		}
 	};
 	//#endregion
+	//#region node_modules/@vot.js/ext/dist/players/jwplayer.js
+	var JWPlayerHelper = class {
+		SUBTITLE_SOURCE = "jwplayer";
+		SUBTITLE_FORMAT = "vtt";
+		getPlayer() {
+			if (typeof jwplayer === "undefined") return;
+			const playerEl = document.querySelector(".jwplayer");
+			if (playerEl?.id) try {
+				const player = jwplayer(playerEl.id);
+				if (player && typeof player.getPlaylistItem === "function") return player;
+			} catch (_e) {}
+			try {
+				return jwplayer();
+			} catch (_e) {
+				return;
+			}
+		}
+		getVideoData(videoId) {
+			try {
+				const player = this.getPlayer();
+				if (!player) throw new Error("JW Player instance not ready or not found");
+				let item = player.getPlaylistItem ? player.getPlaylistItem() : null;
+				if (!item && typeof player.getPlaylist === "function") {
+					const playlist = player.getPlaylist();
+					const index = typeof player.getPlaylistIndex === "function" ? player.getPlaylistIndex() : 0;
+					if (Array.isArray(playlist) && playlist[index]) item = playlist[index];
+				}
+				if (!item) throw new Error("No playlist item found");
+				let duration = 0;
+				if (typeof player.getDuration === "function") duration = player.getDuration();
+				if ((typeof duration !== "number" || duration <= 0) && typeof item.duration === "number") duration = item.duration;
+				const sources = [];
+				if (Array.isArray(item.allSources)) sources.push(...item.allSources);
+				if (Array.isArray(item.sources)) {
+					for (const s of item.sources) if (s?.file && !sources.some((existing) => existing.file === s.file)) sources.push(s);
+				}
+				const validSources = sources.filter((s) => s && typeof s.file === "string" && s.file.length > 0);
+				if (validSources.length === 0) if (typeof item.file === "string" && item.file.length > 0) validSources.push({
+					file: item.file,
+					type: "",
+					label: "default"
+				});
+				else throw new Error("No valid sources found");
+				const getHeight = (s) => {
+					if (typeof s.height === "number" && s.height > 0) return s.height;
+					if (s.label) {
+						const match = s.label.match(/^(\d+)/);
+						if (match) return parseInt(match[1], 10);
+					}
+					return 0;
+				};
+				validSources.sort((a, b) => {
+					const heightA = getHeight(a);
+					const heightB = getHeight(b);
+					if (heightA === 0 && heightB > 0) return 1;
+					if (heightB === 0 && heightA > 0) return -1;
+					return heightA - heightB;
+				});
+				const lowestQuality = validSources[0];
+				return {
+					url: videoId,
+					duration,
+					translationHelp: [{
+						target: "video_file_url",
+						targetUrl: lowestQuality.file
+					}],
+					subtitles: this.getSubtitles()
+				};
+			} catch (err) {
+				console.error("[VOT] JWPlayerHelper error:", err instanceof Error ? err.message : String(err));
+				return;
+			}
+		}
+		getSubtitles() {
+			const subtitles = [];
+			try {
+				const player = this.getPlayer();
+				if (!player) return subtitles;
+				let item = player.getPlaylistItem ? player.getPlaylistItem() : null;
+				if (!item && typeof player.getPlaylist === "function") {
+					const playlist = player.getPlaylist();
+					const index = typeof player.getPlaylistIndex === "function" ? player.getPlaylistIndex() : 0;
+					if (Array.isArray(playlist) && playlist[index]) item = playlist[index];
+				}
+				const tracks = item?.tracks ?? [];
+				const captionsList = typeof player.getCaptionsList === "function" ? player.getCaptionsList() : [];
+				const seenUrls = /* @__PURE__ */ new Set();
+				const addSubtitle = (label, file) => {
+					if (!file) return;
+					try {
+						const absoluteUrl = new URL(file, window.location.href).toString();
+						if (!seenUrls.has(absoluteUrl)) {
+							seenUrls.add(absoluteUrl);
+							subtitles.push({
+								source: this.SUBTITLE_SOURCE,
+								format: this.SUBTITLE_FORMAT,
+								language: normalizeLang$1(label || "en"),
+								url: absoluteUrl
+							});
+						}
+					} catch (_e) {}
+				};
+				if (Array.isArray(tracks)) {
+					for (const track of tracks) if (track && (track.kind === "captions" || track.kind === "subtitles") && track.file) addSubtitle(track.label || "en", track.file);
+				}
+				if (Array.isArray(captionsList)) {
+					for (const track of captionsList) if (track && typeof track === "object" && track.file) addSubtitle(track.label || "en", track.file);
+				}
+			} catch (err) {
+				console.error("[VOT] JWPlayerHelper getSubtitles error:", err);
+			}
+			return subtitles;
+		}
+	};
+	//#endregion
+	//#region node_modules/@vot.js/ext/dist/helpers/noodlemagazine.js
+	var NoodleMagazineHelper = class extends BaseHelper {
+		async getVideoId(url) {
+			return url.pathname.slice(1);
+		}
+		async getVideoData(videoId) {
+			return new JWPlayerHelper().getVideoData(videoId);
+		}
+	};
+	//#endregion
 	//#region node_modules/@vot.js/ext/dist/helpers/odysee.js
 	var OdyseeHelper = class extends BaseHelper {
 		API_ORIGIN = "https://odysee.com";
@@ -5756,62 +6130,6 @@ var vot = (function(exports) {
 		}
 		async getVideoId(url) {
 			return /((courses|learning-journeys)\/([^/]+)(\/[^/]+)?)/.exec(url.pathname)?.[1];
-		}
-	};
-	//#endregion
-	//#region node_modules/@vot.js/ext/dist/players/jwplayer.js
-	var JWPlayerHelper = class {
-		SUBTITLE_SOURCE = "jwplayer";
-		SUBTITLE_FORMAT = "vtt";
-		getPlayer() {
-			if (typeof jwplayer === "undefined") return;
-			return jwplayer();
-		}
-		getVideoData(videoId) {
-			try {
-				const player = this.getPlayer();
-				if (!player || typeof player.getDuration !== "function") throw new Error("JW Player instance not ready");
-				const item = player.getPlaylistItem ? player.getPlaylistItem() : null;
-				if (!item) throw new Error("No playlist item found");
-				const duration = player.getDuration ? player.getDuration() : item.duration ?? 0;
-				const validSources = (item.allSources ?? []).filter((s) => typeof s.height === "number" && s.height > 0);
-				if (validSources.length === 0) throw new Error("No sources with height > 0 found");
-				validSources.sort((a, b) => (a.height ?? 0) - (b.height ?? 0));
-				return {
-					url: videoId,
-					duration,
-					translationHelp: [{
-						target: "video_file_url",
-						targetUrl: validSources[0].file
-					}],
-					subtitles: this.getSubtitles()
-				};
-			} catch (err) {
-				console.error("[VOT] JWPlayerHelper error:", err instanceof Error ? err.message : String(err));
-				return;
-			}
-		}
-		getSubtitles() {
-			const subtitles = [];
-			try {
-				const player = this.getPlayer();
-				if (player?.getPlaylistItem) {
-					const item = player.getPlaylistItem();
-					if (item?.tracks) {
-						for (const track of item.tracks) if (track.kind === "captions" || track.kind === "subtitles") {
-							if (track.file) subtitles.push({
-								source: this.SUBTITLE_SOURCE,
-								format: this.SUBTITLE_FORMAT,
-								language: normalizeLang$1(track.label || "en"),
-								url: new URL(track.file, window.location.href).toString()
-							});
-						}
-					}
-				}
-			} catch (err) {
-				console.error("[VOT] JWPlayerHelper getSubtitles error:", err);
-			}
-			return subtitles;
 		}
 	};
 	//#endregion
@@ -6583,11 +6901,18 @@ var vot = (function(exports) {
 				const { meta: { short_url, video_info }, name } = data;
 				if (!video_info) throw new VideoHelperError("There's no video open right now");
 				if (!short_url) throw new VideoHelperError("Access to the video is limited");
+				const title = this.clearTitle(name);
+				const duration = Math.round(video_info.duration / 1e3);
 				return {
-					url: short_url,
-					title: this.clearTitle(name),
-					duration: Math.round(video_info.duration / 1e3),
-					videoId
+					url: `https://yadi.sk${videoId}`,
+					video_url: short_url,
+					title,
+					duration,
+					videoId: data.path,
+					translationHelp: [{
+						target: "video_file_url",
+						targetUrl: short_url
+					}]
 				};
 			} catch (err) {
 				Logger.error(`Failed to get yandex disk video data by video ID: ${videoId}, because ${err.message}`);
@@ -6660,16 +6985,28 @@ var vot = (function(exports) {
 				const title = this.clearTitle(name);
 				const duration = videoDuration ? Math.round(videoDuration / 1e3) : 0;
 				if (short_url) return {
-					url: short_url,
+					url: `https://yadi.sk${videoId}`,
+					video_url: short_url,
 					duration,
 					title,
-					videoId
+					videoId: path,
+					translationHelp: [{
+						target: "video_file_url",
+						targetUrl: short_url
+					}]
 				};
 				const downloadUrl = await this.getDownloadUrl(path, sk);
+				const proxiedUrl = proxyMedia(new URL(downloadUrl));
 				return {
-					url: proxyMedia(new URL(downloadUrl)),
+					url: `https://yadi.sk${videoId}`,
+					video_url: downloadUrl,
 					duration,
-					title
+					title,
+					videoId: path,
+					translationHelp: [{
+						target: "video_file_url",
+						targetUrl: proxiedUrl
+					}]
 				};
 			} catch (err) {
 				Logger.error(`Failed to get yandex disk video data by disk video ID: ${videoId}`, err.message);
@@ -6677,10 +7014,7 @@ var vot = (function(exports) {
 			}
 		}
 		async getVideoData(videoId) {
-			if (videoId.startsWith(this.INLINE_PREFIX) || /^\/d\/([^/]+)$/.exec(videoId)) return {
-				url: (this.service?.url || "https://disk.yandex.ru") + videoId.slice(1),
-				videoId
-			};
+			if (videoId.startsWith(this.INLINE_PREFIX) || /^\/d\/([^/]+)$/.exec(videoId)) return { url: `https://yadi.sk${videoId}` };
 			videoId = decodeURIComponent(videoId);
 			if (videoId.startsWith(this.CLIENT_PREFIX)) return await this.getClientVideoData(videoId);
 			return await this.getDiskVideoData(videoId);
@@ -6929,6 +7263,7 @@ var vot = (function(exports) {
 		[VideoService$1.imdb]: IMDbHelper,
 		[VideoService$1.telegram]: TelegramHelper,
 		[VideoService$1.niconico]: NicoNicoHelper,
+		[VideoService$1.noodlemagazine]: NoodleMagazineHelper,
 		[ExtVideoService.udemy]: UdemyHelper,
 		[ExtVideoService.coursera]: CourseraHelper,
 		[ExtVideoService.douyin]: DouyinHelper,
@@ -7014,14 +7349,10 @@ var vot = (function(exports) {
 	}
 	//#endregion
 	//#region node_modules/chaimu/dist/config.js
-	var fetchFn = (...args) => {
-		if (typeof globalThis.fetch !== "function") throw new Error("Fetch API is not available in this environment");
-		return globalThis.fetch(...args);
-	};
 	var config_default = {
 		version: "1.0.6",
 		debug: false,
-		fetchFn
+		fetchFn: fetch.bind(window)
 	};
 	//#endregion
 	//#region node_modules/chaimu/dist/debug.js
@@ -7036,26 +7367,17 @@ var vot = (function(exports) {
 		"ratechange",
 		"play",
 		"waiting",
-		"stalled",
-		"seeking",
 		"pause",
-		"ended",
 		"seeked"
 	];
-	var BUFFERING_PAUSE_DELAY_MS = 250;
-	var SYNC_DRIFT_TOLERANCE_SEC = .15;
 	function initAudioContext() {
-		if (typeof window === "undefined") return;
-		const audioContext = window.AudioContext ?? window.webkitAudioContext;
+		const audioContext = window.AudioContext || window.webkitAudioContext;
 		return audioContext ? new audioContext() : void 0;
 	}
-	var IDLE_SUSPEND_DELAY_MS = 1e4;
 	var BasePlayer = class {
 		static name = "BasePlayer";
 		chaimu;
 		fetch;
-		isBuffering = false;
-		bufferingPauseTimer;
 		_src;
 		fetchOpts;
 		constructor(chaimu, src) {
@@ -7078,66 +7400,6 @@ var vot = (function(exports) {
 			this.lipSync(event.type);
 			return this;
 		};
-		isPlaybackBlocked() {
-			const video = this.chaimu.video;
-			return this.isBuffering || !video || video.ended || video.seeking || video.readyState < HTMLMediaElement.HAVE_FUTURE_DATA;
-		}
-		handlePlaybackError(action, error) {
-			if (error instanceof DOMException && error.name === "NotAllowedError") {
-				debug_default.log(`[${this.name}] ${action} blocked by autoplay policy`);
-				return;
-			}
-			console.error(`[${this.name}] ${action} failed`, error);
-		}
-		cancelBufferingPause() {
-			if (this.bufferingPauseTimer !== void 0) {
-				clearTimeout(this.bufferingPauseTimer);
-				this.bufferingPauseTimer = void 0;
-			}
-		}
-		resetPlaybackState() {
-			this.cancelBufferingPause();
-			this.isBuffering = false;
-		}
-		shouldPauseForBuffering() {
-			const video = this.chaimu.video;
-			if (!video || video.paused || video.ended) return false;
-			return video.seeking || video.readyState < HTMLMediaElement.HAVE_FUTURE_DATA;
-		}
-		scheduleBufferingPause(onPause) {
-			this.cancelBufferingPause();
-			this.bufferingPauseTimer = setTimeout(() => {
-				this.bufferingPauseTimer = void 0;
-				if (!this.shouldPauseForBuffering()) return;
-				this.isBuffering = true;
-				onPause();
-			}, BUFFERING_PAUSE_DELAY_MS);
-		}
-		async resumeAudioContext() {
-			const audioContext = this.chaimu.audioContext;
-			if (!audioContext) return true;
-			if (audioContext.state === "running") return true;
-			if (audioContext.state === "closed") {
-				this.handlePlaybackError("resume AudioContext", /* @__PURE__ */ new Error("AudioContext is closed"));
-				return false;
-			}
-			try {
-				await audioContext.resume();
-				return true;
-			} catch (error) {
-				this.handlePlaybackError("resume AudioContext", error);
-				return false;
-			}
-		}
-		async suspendAudioContext() {
-			const audioContext = this.chaimu.audioContext;
-			if (!audioContext || audioContext.state !== "running") return;
-			try {
-				await audioContext.suspend();
-			} catch (error) {
-				this.handlePlaybackError("suspend AudioContext", error);
-			}
-		}
 		removeVideoEvents() {
 			for (const e of videoLipSyncEvents) this.chaimu.video?.removeEventListener(e, this.handleVideoEvent);
 			return this;
@@ -7181,7 +7443,6 @@ var vot = (function(exports) {
 		audio;
 		gainNode;
 		audioSource;
-		suspendTimer;
 		constructor(chaimu, src) {
 			super(chaimu, src);
 			this.updateAudio();
@@ -7189,11 +7450,10 @@ var vot = (function(exports) {
 		initAudioBooster() {
 			if (!this.chaimu.audioContext) return this;
 			this.disconnectAudioNodes();
-			const gainNode = this.chaimu.audioContext.createGain();
-			this.gainNode = gainNode;
-			gainNode.connect(this.chaimu.audioContext.destination);
+			this.gainNode = this.chaimu.audioContext.createGain();
+			this.gainNode.connect(this.chaimu.audioContext.destination);
 			this.audioSource = this.chaimu.audioContext.createMediaElementSource(this.audio);
-			this.audioSource.connect(gainNode);
+			this.audioSource.connect(this.gainNode);
 			return this;
 		}
 		disconnectAudioNodes() {
@@ -7206,27 +7466,6 @@ var vot = (function(exports) {
 				this.gainNode = void 0;
 			}
 		}
-		scheduleSuspend() {
-			this.cancelSuspend();
-			this.suspendTimer = setTimeout(async () => {
-				debug_default.log("[AudioPlayer] idle suspend");
-				await this.suspendAudioContext();
-			}, IDLE_SUSPEND_DELAY_MS);
-		}
-		cancelSuspend() {
-			if (this.suspendTimer !== void 0) {
-				clearTimeout(this.suspendTimer);
-				this.suspendTimer = void 0;
-			}
-		}
-		syncAudioToVideo(force = false) {
-			const video = this.chaimu.video;
-			if (!video) return this;
-			this.audio.playbackRate = video.playbackRate;
-			const drift = Math.abs(this.audio.currentTime - video.currentTime);
-			if (force || drift > SYNC_DRIFT_TOLERANCE_SEC) this.audio.currentTime = video.currentTime;
-			return this;
-		}
 		updateAudio() {
 			this.audio = new Audio(this.src);
 			this.audio.crossOrigin = "anonymous";
@@ -7237,78 +7476,52 @@ var vot = (function(exports) {
 			this.initAudioBooster();
 			return this;
 		}
-		async resumeAndPlayAudio() {
-			if (!this.audio || this.isPlaybackBlocked()) return;
-			this.cancelSuspend();
-			if (!await this.resumeAudioContext() || this.isPlaybackBlocked()) return;
-			try {
-				await this.audio.play();
-			} catch (error) {
-				this.handlePlaybackError("play audio element", error);
-			}
-		}
+		audioErrorHandle = (e) => {
+			console.error("[AudioPlayer]", e);
+		};
 		lipSync(mode = false) {
 			debug_default.log("[AudioPlayer] lipsync video", this.chaimu.video);
 			if (!this.chaimu.video) return this;
-			this.syncAudioToVideo(mode === "play" || mode === "seeked" || mode === "seeking");
-			if (!mode) return this;
+			this.audio.currentTime = this.chaimu.video.currentTime;
+			this.audio.playbackRate = this.chaimu.video.playbackRate;
+			if (!mode) {
+				debug_default.log("[AudioPlayer] lipsync mode isn't set");
+				return this;
+			}
+			debug_default.log(`[AudioPlayer] lipsync mode is ${mode}`);
 			switch (mode) {
-				case "ratechange":
-					this.cancelBufferingPause();
-					return this;
 				case "play":
 				case "playing":
 				case "seeked":
-					this.cancelBufferingPause();
-					this.isBuffering = false;
 					if (!this.chaimu.video.paused) this.syncPlay();
 					return this;
-				case "waiting":
-				case "stalled":
-					this.scheduleBufferingPause(() => {
-						this.audio.pause();
-					});
-					return this;
-				case "seeking":
-					this.cancelBufferingPause();
-					this.isBuffering = true;
-					this.audio.pause();
-					return this;
 				case "pause":
-				case "ended":
-					this.cancelBufferingPause();
-					this.isBuffering = false;
+				case "waiting":
 					this.pause();
 					return this;
 				default: return this;
 			}
 		}
 		async clear() {
-			this.cancelSuspend();
-			this.resetPlaybackState();
 			this.audio.pause();
 			this.audio.src = "";
 			this.audio.removeAttribute("src");
-			this.audio.load();
 			this.disconnectAudioNodes();
-			await this.suspendAudioContext();
 			return this;
 		}
 		syncPlay() {
 			debug_default.log("[AudioPlayer] sync play called");
-			this.resumeAndPlayAudio();
+			if (this.audio) this.audio.play().catch(this.audioErrorHandle);
 			return this;
 		}
 		async play() {
 			debug_default.log("[AudioPlayer] play called");
-			await this.resumeAndPlayAudio();
+			if (this.audio) await this.audio.play().catch(this.audioErrorHandle);
 			return this;
 		}
 		async pause() {
 			debug_default.log("[AudioPlayer] pause called");
-			this.resetPlaybackState();
 			if (this.audio) this.audio.pause();
-			this.scheduleSuspend();
 			return this;
 		}
 		set src(url) {
@@ -7355,7 +7568,6 @@ var vot = (function(exports) {
 		isClearing = false;
 		isInitializing = false;
 		clearingPromise;
-		suspendTimer;
 		async fetchAudio() {
 			if (!this._src) throw new Error("No audio source provided");
 			if (!this.chaimu.audioContext) throw new Error("No audio context available");
@@ -7363,7 +7575,6 @@ var vot = (function(exports) {
 			let tempBlobUrl;
 			try {
 				const res = await this.fetch(this._src, this.fetchOpts);
-				if (!res.ok) throw new Error(`Response status: ${res.status}`);
 				debug_default.log(`[ChaimuPlayer] Decoding fetched audio...`);
 				const data = await res.arrayBuffer();
 				const blob = new Blob([data]);
@@ -7394,19 +7605,6 @@ var vot = (function(exports) {
 				this.gainNode = void 0;
 			}
 		}
-		scheduleSuspend() {
-			this.cancelSuspend();
-			this.suspendTimer = setTimeout(async () => {
-				debug_default.log("[ChaimuPlayer] idle suspend");
-				await this.suspendAudioContext();
-			}, IDLE_SUSPEND_DELAY_MS);
-		}
-		cancelSuspend() {
-			if (this.suspendTimer !== void 0) {
-				clearTimeout(this.suspendTimer);
-				this.suspendTimer = void 0;
-			}
-		}
 		async init() {
 			if (this.isInitializing) throw new Error("Initialization already in progress");
 			this.isInitializing = true;
@@ -7430,39 +7628,27 @@ var vot = (function(exports) {
 				if ("webkitPreservesPitch" in audio) audio.webkitPreservesPitch = true;
 			}
 			this.audioElement = audio;
-			const gainNode = this.gainNode;
-			if (!gainNode) throw new Error("Audio gain node is missing");
 			this.mediaElementSource = this.chaimu.audioContext.createMediaElementSource(audio);
-			this.mediaElementSource.connect(gainNode);
-			gainNode.connect(this.chaimu.audioContext.destination);
+			this.mediaElementSource.connect(this.gainNode);
+			this.gainNode.connect(this.chaimu.audioContext.destination);
 		}
 		lipSync(mode = false) {
 			debug_default.log("[ChaimuPlayer] lipsync video", this.chaimu.video, this);
-			if (!this.chaimu.video || !mode) return this;
+			if (!this.chaimu.video) return this;
+			if (!mode) {
+				debug_default.log("[ChaimuPlayer] lipsync mode isn't set");
+				return this;
+			}
+			debug_default.log(`[ChaimuPlayer] lipsync mode is ${mode}`);
 			switch (mode) {
 				case "play":
 				case "playing":
 				case "ratechange":
 				case "seeked":
-					this.cancelBufferingPause();
-					this.isBuffering = false;
 					if (!this.chaimu.video.paused) this.start();
 					return this;
-				case "waiting":
-				case "stalled":
-					this.scheduleBufferingPause(() => {
-						if (this.audioElement) this.audioElement.pause();
-					});
-					return this;
-				case "seeking":
-					this.cancelBufferingPause();
-					this.isBuffering = true;
-					if (this.audioElement) this.audioElement.pause();
-					return this;
 				case "pause":
-				case "ended":
-					this.cancelBufferingPause();
-					this.isBuffering = false;
+				case "waiting":
 					this.pause();
 					return this;
 				default: return this;
@@ -7482,11 +7668,10 @@ var vot = (function(exports) {
 			if (this.isClearing && this.clearingPromise) return this.clearingPromise;
 			if (!this.chaimu.audioContext) throw new Error("No audio context available");
 			debug_default.log("clear audio context");
-			this.cancelSuspend();
-			this.resetPlaybackState();
 			this.isClearing = true;
 			this.clearingPromise = (async () => {
 				try {
+					await this.pause();
 					if (this.audioElement) {
 						this.audioElement.pause();
 						this.audioElement = void 0;
@@ -7495,14 +7680,12 @@ var vot = (function(exports) {
 						URL.revokeObjectURL(this.blobUrl);
 						this.blobUrl = void 0;
 					}
-					this.audioBuffer = void 0;
-					const oldVolume = this.gainNode ? this.gainNode.gain.value : 1;
 					this.disconnectAudioNodes();
+					const oldVolume = this.gainNode ? this.gainNode.gain.value : 1;
 					await this.reopenCtx();
 					if (this.chaimu.audioContext) {
 						this.initAudioBooster();
 						this.volume = oldVolume;
-						await this.suspendAudioContext();
 					}
 					return this;
 				} finally {
@@ -7519,34 +7702,24 @@ var vot = (function(exports) {
 				debug_default.log("The other cleaner is still running, waiting...");
 				await this.clearingPromise;
 			}
-			if (!this.chaimu.audioContext || !this.audioElement) return this;
-			this.cancelSuspend();
-			if (this.isPlaybackBlocked()) return this;
 			debug_default.log("starting audio via HTMLAudioElement");
-			if (!await this.resumeAudioContext()) return this;
-			if (this.isPlaybackBlocked()) return this;
+			await this.play();
 			if (this.chaimu.video) {
 				this.audioElement.currentTime = this.chaimu.video.currentTime;
 				this.audioElement.playbackRate = this.chaimu.video.playbackRate;
 			}
-			try {
-				await this.audioElement.play();
-			} catch (error) {
-				this.handlePlaybackError("play audio element", error);
-			}
+			this.audioElement.play().catch((err) => debug_default.log("[ChaimuPlayer] Play audioElement failed:", err));
 			return this;
 		}
 		async pause() {
 			if (!this.chaimu.audioContext) throw new Error("No audio context available");
-			this.resetPlaybackState();
 			if (this.audioElement) this.audioElement.pause();
-			this.scheduleSuspend();
+			if (this.chaimu.audioContext.state === "running") await this.chaimu.audioContext.suspend();
 			return this;
 		}
 		async play() {
 			if (!this.chaimu.audioContext) throw new Error("No audio context available");
-			this.cancelSuspend();
-			await this.resumeAudioContext();
+			await this.chaimu.audioContext.resume();
 			return this;
 		}
 		set src(url) {
@@ -7587,15 +7760,14 @@ var vot = (function(exports) {
 			this._debug = config_default.debug = debug;
 			this.fetchFn = fetchFn;
 			this.fetchOpts = fetchOpts;
-			this.audioContext = preferAudio ? void 0 : initAudioContext();
+			this.audioContext = initAudioContext();
 			this.player = this.audioContext && !preferAudio ? new ChaimuPlayer(this, url) : new AudioPlayer(this, url);
 			this.video = video;
 		}
 		async init() {
 			await this.player.init();
+			if (this.video && !this.video.paused) this.player.lipSync("play");
 			this.player.addVideoEvents();
-			if (this.video.paused || this.video.ended || this.video.seeking || this.video.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) await this.player.pause();
-			else this.player.lipSync("play");
 		}
 		set debug(value) {
 			this._debug = config_default.debug = value;
@@ -7607,7 +7779,7 @@ var vot = (function(exports) {
 	//#endregion
 	//#region src/bootstrap/bootState.ts
 	var MAIN_BOOT_KEY = "__VOT_MAIN_BOOT_STATE__";
-	var BOOTSTRAP_STATUSES = new Set([
+	var BOOTSTRAP_STATUSES = /* @__PURE__ */ new Set([
 		"idle",
 		"booting",
 		"booted",
@@ -7780,7 +7952,7 @@ var vot = (function(exports) {
 		if (typeof navigator === "undefined") return "en";
 		return navigator.language?.substring(0, 2).toLowerCase() || "en";
 	}
-	var slavicLangs = new Set([
+	var slavicLangs = /* @__PURE__ */ new Set([
 		"uk",
 		"be",
 		"bg",
@@ -10440,7 +10612,7 @@ var vot = (function(exports) {
 	}
 	async function updateConfig(data) {
 		if (data.compatVersion === "2025-05-09") return data;
-		const keysToRead = new Set([...Object.keys(data), ...compatKeysToRead]);
+		const keysToRead = /* @__PURE__ */ new Set([...Object.keys(data), ...compatKeysToRead]);
 		const persistedValues = await votStorage.getValues(createUndefinedDefaults(keysToRead));
 		const newData = { ...data };
 		const writeOperations = [];
@@ -11296,7 +11468,7 @@ var vot = (function(exports) {
 	//#endregion
 	//#region src/bootstrap/videoObserverBinding.ts
 	var boundObservers = /* @__PURE__ */ new WeakSet();
-	var RUNTIME_URL_HOSTS = new Set(["peertube", "directlink"]);
+	var RUNTIME_URL_HOSTS = /* @__PURE__ */ new Set(["peertube", "directlink"]);
 	function bindObserverListeners(options) {
 		const { videoObserver, videosWrappers, ensureRuntimeActivated, getServicesCached, findContainer, createVideoHandler } = options;
 		if (boundObservers.has(videoObserver)) return;
@@ -11403,6 +11575,25 @@ var vot = (function(exports) {
 			initializingVideos.delete(video);
 			if (container && pendingVideoByContainer.get(container) === video) pendingVideoByContainer.delete(container);
 			await promotePendingVideo(container);
+		});
+	}
+	//#endregion
+	//#region src/config/extraSites.ts
+	/**
+	* Sites missing from the @vot.js sites list that should still get
+	* the VOT interface. Translation is requested with the raw page URL.
+	*/
+	var extraServices = [{
+		host: VideoService$1.custom,
+		url: "stub",
+		match: (url) => /(^|\.)magenta\.tv$/.test(url.hostname) && url.pathname.startsWith("/streamen-tv"),
+		rawResult: true
+	}];
+	function getMatchedExtraServices() {
+		const url = new URL(globalThis.location.href);
+		return extraServices.filter(({ match }) => {
+			if (match instanceof RegExp) return match.test(url.hostname);
+			return typeof match === "function" ? match(url) : false;
 		});
 	}
 	//#endregion
@@ -13135,10 +13326,10 @@ var vot = (function(exports) {
 	}
 	//#endregion
 	//#region src/core/hostPolicies.ts
-	var EXTERNAL_VOLUME_HOSTS = new Set(["youtube", "googledrive"]);
+	var EXTERNAL_VOLUME_HOSTS = /* @__PURE__ */ new Set(["youtube", "googledrive"]);
 	var YOUTUBE_LIKE_HOSTS = EXTERNAL_VOLUME_HOSTS;
-	var MUTE_SYNC_DISABLED_HOSTS = new Set(["rutube", "ok"]);
-	var TRANSLATION_DOWNLOAD_HOSTS = new Set([
+	var MUTE_SYNC_DISABLED_HOSTS = /* @__PURE__ */ new Set(["rutube", "ok"]);
+	var TRANSLATION_DOWNLOAD_HOSTS = /* @__PURE__ */ new Set([
 		"youtube",
 		"invidious",
 		"piped"
@@ -13495,11 +13686,7 @@ var vot = (function(exports) {
 			overlayView.languagePairSelect.toSelect.setSelectedValue(to);
 			return this;
 		}
-	}, t = globalThis, i = (t) => t, s = t.trustedTypes, e = s ? s.createPolicy("lit-html", { createHTML: (t) => t }) : void 0, h = "$lit$", o = `lit$${Math.random().toFixed(9).slice(2)}$`, n = "?" + o, r = `<${n}>`, l = document, c = () => l.createComment(""), a = (t) => null === t || "object" != typeof t && "function" != typeof t, u = Array.isArray, d = (t) => u(t) || "function" == typeof t?.[Symbol.iterator], f = "[ 	\n\f\r]", v = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g, _ = /-->/g, m = />/g, p = RegExp(`>|${f}(?:([^\\s"'>=/]+)(${f}*=${f}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`, "g"), g = /'/g, $ = /"/g, y = /^(?:script|style|textarea|title)$/i, x = (t) => (i, ...s) => ({
-		_$litType$: t,
-		strings: i,
-		values: s
-	}), b = x(1), w = x(2);
+	};
 	//#endregion
 	//#region node_modules/lit-html/lit-html.js
 	/**
@@ -13507,7 +13694,38 @@ var vot = (function(exports) {
 	* Copyright 2017 Google LLC
 	* SPDX-License-Identifier: BSD-3-Clause
 	*/
-	var E = Symbol.for("lit-noChange"), A = Symbol.for("lit-nothing"), C = /* @__PURE__ */ new WeakMap(), P = l.createTreeWalker(l, 129);
+	var t = globalThis;
+	var i = (t) => t;
+	var s = t.trustedTypes;
+	var e = s ? s.createPolicy("lit-html", { createHTML: (t) => t }) : void 0;
+	var h = "$lit$";
+	var o = `lit$${Math.random().toFixed(9).slice(2)}$`;
+	var n = "?" + o;
+	var r = `<${n}>`;
+	var l = document;
+	var c = () => l.createComment("");
+	var a = (t) => null === t || "object" != typeof t && "function" != typeof t;
+	var u = Array.isArray;
+	var d = (t) => u(t) || "function" == typeof t?.[Symbol.iterator];
+	var f = "[ 	\n\f\r]";
+	var v = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g;
+	var _ = /-->/g;
+	var m = />/g;
+	var p = RegExp(`>|${f}(?:([^\\s"'>=/]+)(${f}*=${f}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`, "g");
+	var g = /'/g;
+	var $ = /"/g;
+	var y = /^(?:script|style|textarea|title)$/i;
+	var x = (t) => (i, ...s) => ({
+		_$litType$: t,
+		strings: i,
+		values: s
+	});
+	var b = x(1);
+	var w = x(2);
+	var E = Symbol.for("lit-noChange");
+	var A = Symbol.for("lit-nothing");
+	var C = /* @__PURE__ */ new WeakMap();
+	var P = l.createTreeWalker(l, 129);
 	function V(t, i) {
 		if (!u(t) || !t.hasOwnProperty("raw")) throw Error("invalid template strings array");
 		return void 0 !== e ? e.createHTML(i) : i;
@@ -13736,7 +13954,8 @@ var vot = (function(exports) {
 		_$AI(t) {
 			M(this, t);
 		}
-	}, B = t.litHtmlPolyfillSupport;
+	};
+	var B = t.litHtmlPolyfillSupport;
 	B?.(S, k), (t.litHtmlVersions ??= []).push("3.3.3");
 	var D = (t, i, s) => {
 		const e = s?.renderBefore ?? i;
@@ -17765,7 +17984,7 @@ var vot = (function(exports) {
 		], 0);
 		frame.set(toUint32BE(frameData.length), 4);
 		frame.set(frameData, 10);
-		const header = new Uint8Array(10);
+		const header = /* @__PURE__ */ new Uint8Array(10);
 		header.set([
 			73,
 			68,
@@ -18732,7 +18951,7 @@ var vot = (function(exports) {
 		};
 		singleSelectItemHandle = (item) => {
 			const value = item.value;
-			this.selectedValues = new Set([value]);
+			this.selectedValues = /* @__PURE__ */ new Set([value]);
 			this.syncItemsSelectionState();
 			this.syncItemsSelectionState(this.baseItems);
 			this.updateSelectedState();
@@ -20956,7 +21175,8 @@ var vot = (function(exports) {
 			const getOpen = () => header.container.dataset.open === "true";
 			setOpen(!!options.open);
 			header.addEventListener("click", () => {
-				setOpen(!(header.container.dataset.open === "true"));
+				const isOpen = header.container.dataset.open === "true";
+				setOpen(!isOpen);
 			});
 			section.append(header.container, content);
 			return {
@@ -24412,7 +24632,8 @@ var vot = (function(exports) {
 			self.syncVideoVolumeSlider();
 			const activeOverlayView = self.uiManager.votOverlayView;
 			if (!activeOverlayView?.isInitialized()) return;
-			syncAudioTranslationVolumeFromVideo(self, toPercentInt(activeOverlayView.videoVolumeSlider.value));
+			const videoPercent = toPercentInt(activeOverlayView.videoVolumeSlider.value);
+			syncAudioTranslationVolumeFromVideo(self, videoPercent);
 		});
 		const ytpVolumePanel = document.querySelector(".ytp-volume-panel");
 		if (!ytpVolumePanel) return;
@@ -24605,7 +24826,8 @@ var vot = (function(exports) {
 			self.syncVideoVolumeSlider();
 			const activeOverlayView = self.uiManager.votOverlayView;
 			if (!activeOverlayView?.isInitialized()) return;
-			syncAudioTranslationVolumeFromVideo(self, toPercentInt(activeOverlayView.videoVolumeSlider.value), { skipYouTubeLikeHosts: true });
+			const videoPercent = toPercentInt(activeOverlayView.videoVolumeSlider.value);
+			syncAudioTranslationVolumeFromVideo(self, videoPercent, { skipYouTubeLikeHosts: true });
 		});
 		if (self.site.host === "youtube" && !self.site.additionalData) add(document, "yt-page-data-updated", () => {
 			debug.log("yt-page-data-updated");
@@ -25699,7 +25921,7 @@ var vot = (function(exports) {
 	//#endregion
 	//#region src/index.ts
 	var RESOLVED_VOID_PROMISE = Promise.resolve();
-	var TRANSLATION_LOADING_MESSAGES = new Set([
+	var TRANSLATION_LOADING_MESSAGES = /* @__PURE__ */ new Set([
 		"Подготавливаем перевод",
 		"Видео передано в обработку",
 		"Ожидаем перевод видео",
@@ -26665,7 +26887,7 @@ var vot = (function(exports) {
 		debug.log(`[VOT][bootstrap][${ctx.frame}] ${message}`, payload);
 	}
 	function getServicesCached() {
-		servicesCache ??= getService();
+		servicesCache ??= [...getService(), ...getMatchedExtraServices()];
 		return servicesCache;
 	}
 	/**

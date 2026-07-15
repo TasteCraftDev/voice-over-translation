@@ -7,6 +7,7 @@
   "icon": "https://translate.yandex.ru/icons/favicon.ico",
   "match": [
     "*://*.youtube.com/*",
+    "*://*.magenta.tv/streamen-tv/*",
     "*://*.youtube-nocookie.com/*",
     "*://*.youtubekids.com/*",
     "*://*.twitch.tv/*",
