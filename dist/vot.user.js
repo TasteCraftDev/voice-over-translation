@@ -13570,10 +13570,11 @@ var vot = (function(exports) {
 				description,
 				allowTextLanguageDetection: false
 			});
+			const rawDuration = duration || this.videoHandler.video?.duration;
 			const videoData = {
 				translationHelp,
 				isStream,
-				duration: duration || this.videoHandler.video?.duration || config_default$1.defaultDuration,
+				duration: rawDuration && Number.isFinite(rawDuration) ? rawDuration : config_default$1.defaultDuration,
 				videoId,
 				url,
 				host,

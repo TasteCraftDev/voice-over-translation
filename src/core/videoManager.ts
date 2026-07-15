@@ -476,13 +476,15 @@ export class VOTVideoManager {
         allowTextLanguageDetection: false,
       });
 
+    const rawDuration = duration || this.videoHandler.video?.duration;
     const videoData = {
       translationHelp,
       isStream,
+      // if 0, we get 400 error; live streams report Infinity
       duration:
-        duration ||
-        this.videoHandler.video?.duration ||
-        votConfig.defaultDuration, // if 0, we get 400 error
+        rawDuration && Number.isFinite(rawDuration)
+          ? rawDuration
+          : votConfig.defaultDuration,
       videoId,
       url,
       host,
